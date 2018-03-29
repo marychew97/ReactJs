@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="ReactJs/React-Boilerplate-master/src/js/react.min.js"></script>
+    <script src="ReactJs/React-Boilerplate-master/src/js/react-dom.min.js"></script>
+    <script src="ReactJs/React-Boilerplate-master/src/js/browser.min.js"></script>
+    <script src="https://cdn.firebase.com/js/client/1.0.17/firebase.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    <script src="firebase_script.js"></script>
+
+    <title>React Practice 2</title>
+
+    <style>
+        body{
+            margin-top: 30px;
+        }
+
+        a.delete{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="app"></div>
+            </div>
+        </div>
+    </div>
+
+    <!--
+    <script type="text/babel">
+        var Jumbotron = React.createClass({
+            //type of properties
+            propTypes:{
+                title: React.PropTypes.string.isRequired
+            },
+            getDefaultProps: function(){
+                return {
+                    title: "Hello World",
+                    text: "This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information."
+                }
+            },
+
+            render: function(){
+                return (
+                    <div className="jumbotron">
+                        <h1 className="display-4">{this.props.title}</h1>
+                        <p className="lead">{this.props.text}</p>
+                        <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
+                        <p className="lead">
+                            <a onClick={this.onClick.bind(this, "Hello","Goodbye")} className="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
+                        </p>
+                    </div>
+                );
+            },
+
+            onClick: function(greeting,greeting2){
+                alert (greeting2);
+            }
+        });
+
+        ReactDOM.render(<Jumbotron title="Something else" />, document.getElementById("jumbotron"));
+    </script>-->
+
+    <!--
+    <script type="text/babel">
+        var App = React.createClass({
+            getInitialState: function(){
+                return {
+                    text: "Hello World"
+                }
+            },
+
+            render: function(){
+                return (
+                    <div>
+                        <h1>Type a message</h1>
+                        <form>
+                            <input type="text" onChange={this.changeText} value={this.state.text}/>
+                            <button className="btn btn-primary">Click</button>
+                        </form> 
+                        <br />
+                        <Component2 text={this.state.text}/>      
+                    </div>
+                );
+            },
+
+            changeText: function(e){
+                 this.setState({text: e.target.value});
+            }
+        });
+
+        var Component2 = React.createClass({
+            render: function(){
+                return (
+                    <div>
+                        {this.props.text}
+                    </div>
+                );
+            }
+        });
+
+        ReactDOM.render(<App />, document.getElementById("app"));
+    </script>-->
+
+    <script type="text/babel">
+        var App = React.createClass({
+            getInitialState: function(){
+                return {
+                    text: "",
+                    isEdit: 0,
+                    todos: [
+                        {
+                            id: 1,
+                            text: "Watching movie"
+                        },
+                        {
+                            id: 2,
+                            text: "Learning ReactJs"
+                        },
+                        {
+                            id: 3,
+                            text: "Reading"
+                        }
+                    ]
+                }
+            },
+
+            //to work with API or Ajax
+            componentWillMount: function(){
+                this.firebaseRef = new Firebase('https://todolist-d831e.firebaseio.com/todos');
+                var that = this;
+                this.firebaseRef.on("value", function(snapshot){
+                    var todos = [];
+                    snapshot.forEach(function(data){
+                        var todo = {
+                            id: data.val().id,
+                            text: data.val().text
+                        }
+                        todos.push(todo);
+                        that.setState({todos: todos});
+                    });
+                });
+            },
+
+            render: function(){
+                return (
+                    <div>
+                        <TodoForm 
+                        //to add all the state values
+                        {...this.state}
+                        changeText={this.handleChangeText}
+                        onTodoUpdate={this.handleTodoUpdate}
+                        onTodoAdd={this.handleTodoAdd}/>
+
+                        <TodoList 
+                        //todos={this.state.todos}
+                        {...this.state}
+                        editTodo={this.handleTodoEdit}
+                        deleteTodo={this.handleTodoDelete} />
+                    </div>
+                );
+            },
+
+            handleTodoAdd: function(text){
+                var newTodo = {
+                    id: this.state.todos.length + 1,
+                    text: text
+                }
+
+                this.firebaseRef.push(newTodo);
+                this.setState({todos: this.state.todos.concat(newTodo)});
+            },
+
+            handleTodoDelete: function(todo){
+                var todos = this.state.todos;
+                for(var i=0; i<todos.length; i++){
+                    if(todos[i].id == todo.id){
+                        todos.splice(i,1);
+                    }
+                }
+                this.setState({todos: todos});
+            },
+
+            handleTodoEdit: function(todo){
+                this.setState({
+                    text: todo.text,
+                    isEdit: todo.id
+                });
+            },
+
+            handleChangeText: function(text){
+                this.setState({text: text});
+            },
+
+            handleTodoUpdate: function(todo){
+                var todos = this.state.todos;
+                for(var i=0; i<todos.length; i++){
+                    if(todos[i].id == todo.id){
+                        todos.splice(i,1);
+                    }
+                }
+                todos.push(todo);
+                this.setState({todos: todos});
+            }
+
+        });
+
+        var TodoForm = React.createClass({
+            render: function(){
+                return (
+                    <div>
+                        <form onSubmit={this.onSubmit}>
+                            <div className="form-group">
+                                <label>Todo text</label>
+                                <input type="text" ref="text" value={this.props.text} onChange={this.onChange} className="form-control" />
+                            </div>
+                        </form>
+                    </div>
+                );
+            },
+
+            onChange: function(e){
+                this.props.changeText(e.target.value);
+            },
+
+            onSubmit: function(e){
+                e.preventDefault();
+                //trim function is to clean 
+                var text = this.refs.text.value.trim();
+
+                if(!text){
+                    alert("Please enter a todo");
+                }
+
+                if(this.props.isEdit){
+                    var updatedTodo = {
+                        id: this.props.isEdit,
+                        text:text
+                    }
+
+                    this.props.onTodoUpdate(updatedTodo);
+                }else{
+                    this.props.onTodoAdd(text);
+                }
+
+                this.refs.text.value = "";
+            }
+
+        });
+
+        var TodoList = React.createClass({
+            render: function(){
+                return (
+                    <ul className="list-group">
+                        {
+                            this.props.todos.map(todo => {
+                                return <li className="list-group-item" todo={todo} key={todo.id}><span onClick={this.editTodo.bind(this, todo)}>{todo.text}</span> <a onClick={this.onDelete.bind(this,todo)} className="delete" href="#">X</a></li>
+                            })
+                        }
+                    </ul>
+                );
+            },
+
+            onDelete: function(todo){
+                this.props.deleteTodo(todo);
+            },
+
+            editTodo: function(todo){
+                this.props.editTodo(todo);
+            }
+        });
+
+    
+        ReactDOM.render(<App />, document.getElementById("app"));
+    </script>
+</body>
+</html>
